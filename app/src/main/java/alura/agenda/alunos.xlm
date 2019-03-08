@@ -1,0 +1,19 @@
+<alunos>
+    <aluno>
+        <id>1</id>
+        <nome>Daniel</nome>
+        <endereco>Rua Vergueiro</endereco>
+        <telefone>12341234</telefone>
+        <site>www.alura.com.br</site>
+        <nota>4.5</nota>
+    </aluno>
+
+    <aluno>
+        <id>2</id>
+        <nome>Jeferson</nome>
+        <endereco>Rua Rebouças</endereco>
+        <telefone>56785678</telefone>
+        <site>www.caelum.com.br</site>
+        <nota>3.5</nota>
+    </aluno>
+</alunos>

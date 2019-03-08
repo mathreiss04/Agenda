@@ -1,0 +1,24 @@
+{
+  "list": [
+    {
+      "aluno": [
+        {
+          "id": "1",
+          "nome": "Daniel",
+          "endereco": "Rua Vergueiro",
+          "telefone": "11112222",
+          "site": "www.alura.com.br",
+          "nota": "4.5"
+        },
+        {
+          "id": "2",
+          "nome:": "Jeferson",
+          "endereco": "Avenida Rebouças",
+          "telefone": "56785678",
+          "site": "www.caelum.com.br",
+          "nota": "3.5"
+        }
+      ]
+    }
+  ]
+}
