@@ -4,16 +4,15 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.provider.Browser;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -21,9 +20,14 @@ import android.widget.Toast;
 import java.util.List;
 
 import alura.agenda.adapter.AlunosAdapter;
-import alura.agenda.converter.AlunoConverter;
 import alura.agenda.dao.AlunoDAO;
+import alura.agenda.dto.AlunosSync;
 import alura.agenda.modelo.Aluno;
+import alura.agenda.tasks.EnviaAlunosTask;
+import alura.agenda.retrofit.RetrofitInicializador;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ListaAlunosActivity extends AppCompatActivity {
 
@@ -74,6 +78,26 @@ public class ListaAlunosActivity extends AppCompatActivity {
     @Override
     protected void onResume(){
         super.onResume();
+
+        Call<AlunosSync> call = new RetrofitInicializador().getAlunoService().lista();
+
+        call.enqueue(new Callback<AlunosSync>() {
+            @Override
+            public void onResponse(Call<AlunosSync> call, Response<AlunosSync> response) {
+                AlunosSync alunosSync = response.body();
+                AlunoDAO dao = new AlunoDAO(ListaAlunosActivity.this);
+                dao.sincroniza(alunosSync.getAlunos());
+
+                dao.close();
+                carregaLista();
+            }
+
+            @Override
+            public void onFailure(Call<AlunosSync> call, Throwable t) {
+                Log.e("onFailure chamado", t.getMessage());
+            }
+        });
+
         carregaLista();
     }
 
