@@ -11,9 +11,9 @@ import org.greenrobot.eventbus.EventBus;
 import java.io.IOException;
 import java.util.Map;
 
-import alura.agenda.dao.AlunoDAO;
 import alura.agenda.dto.AlunosSync;
 import alura.agenda.event.AtualizaListaAlunosEvent;
+import alura.agenda.sinc.AlunoSincronizador;
 
 public class AgendaMessagingService extends FirebaseMessagingService{
 
@@ -32,9 +32,7 @@ public class AgendaMessagingService extends FirebaseMessagingService{
             ObjectMapper mapper = new ObjectMapper();
             try {
                 AlunosSync alunosSync = mapper.readValue(json, AlunosSync.class);
-                AlunoDAO alunoDAO = new AlunoDAO(this);
-                alunoDAO.sincroniza(alunosSync.getAlunos());
-                alunoDAO.close();
+                new AlunoSincronizador(AgendaMessagingService.this).sincroniza(alunosSync);
 
                 EventBus eventBus = EventBus.getDefault();
                 eventBus.post(new AtualizaListaAlunosEvent());

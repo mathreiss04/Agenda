@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,7 +15,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -26,17 +24,14 @@ import java.util.List;
 
 import alura.agenda.adapter.AlunosAdapter;
 import alura.agenda.dao.AlunoDAO;
-import alura.agenda.dto.AlunosSync;
 import alura.agenda.event.AtualizaListaAlunosEvent;
 import alura.agenda.modelo.Aluno;
-import alura.agenda.retrofit.RetrofitInicializador;
+import alura.agenda.sinc.AlunoSincronizador;
 import alura.agenda.tasks.EnviaAlunosTask;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class ListaAlunosActivity extends AppCompatActivity {
 
+    private final AlunoSincronizador sincronizador = new AlunoSincronizador(this);
     private ListView listaAlunos;
     private SwipeRefreshLayout swipe;
 
@@ -54,7 +49,7 @@ public class ListaAlunosActivity extends AppCompatActivity {
         swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                buscaAlunos();
+                sincronizador.buscaTodos();
             }
         });
 
@@ -79,11 +74,13 @@ public class ListaAlunosActivity extends AppCompatActivity {
         });
 
         registerForContextMenu(listaAlunos);
-        buscaAlunos();
+        sincronizador.buscaTodos();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void atualizaListaAlunosEvent(AtualizaListaAlunosEvent event){
+
+        if(swipe.isRefreshing()) swipe.setRefreshing(false);
         carregaLista();
     }
 
@@ -104,29 +101,6 @@ public class ListaAlunosActivity extends AppCompatActivity {
         super.onResume();
 
         carregaLista();
-    }
-
-    private void buscaAlunos() {
-        Call<AlunosSync> call = new RetrofitInicializador().getAlunoService().lista();
-
-        call.enqueue(new Callback<AlunosSync>() {
-            @Override
-            public void onResponse(Call<AlunosSync> call, Response<AlunosSync> response) {
-                AlunosSync alunosSync = response.body();
-                AlunoDAO dao = new AlunoDAO(ListaAlunosActivity.this);
-                dao.sincroniza(alunosSync.getAlunos());
-
-                dao.close();
-                carregaLista();
-                swipe.setRefreshing(false);
-            }
-
-            @Override
-            public void onFailure(Call<AlunosSync> call, Throwable t) {
-                Log.e("onFailure chamado", t.getMessage());
-                swipe.setRefreshing(false);
-            }
-        });
     }
 
     @Override
@@ -207,29 +181,17 @@ public class ListaAlunosActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
 
-                Call<Void> call = new RetrofitInicializador().getAlunoService().deleta(aluno.getId());
+                AlunoDAO dao = new AlunoDAO(ListaAlunosActivity.this);
+                dao.deleta(aluno);
+                dao.close();
+                carregaLista();
 
-                call.enqueue(new Callback<Void>() {
-                    @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
-                        AlunoDAO dao = new AlunoDAO(ListaAlunosActivity.this);
-                        dao.deleta(aluno);
-                        dao.close();
-
-                        carregaLista();
-                    }
-
-                    @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                        Toast.makeText(ListaAlunosActivity.this,
-                                "Não foi possível remover o aluno",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+                sincronizador.deleta(aluno);
 
                 return false;
             }
         });
     }
+
 }
 
